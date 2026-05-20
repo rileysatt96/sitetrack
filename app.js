@@ -6,56 +6,35 @@ let allSites = [];
 let allLog = [];
 let scanner = null;
 let scannedEquipmentId = null;
-let enteredPin = '';
- 
 // ─── AUTH ───────────────────────────────────────────────────────────────────
  
-function pinPress(val) {
-  
-  enteredPin += val;
-  renderPinDots();
-  if (enteredPin.length === 4) {
-    // Try login after short delay to show last dot
-    setTimeout(() => attemptPinLogin(), 300);
+function onPinInput(val) {
+  const clean = val.replace(/[^0-9]/g, '').slice(0, 4);
+  document.getElementById('pinInput').value = clean;
+  document.getElementById('pinError').classList.add('hidden');
+  if (clean.length === 4) {
+    setTimeout(() => attemptPinLogin(clean), 200);
   }
 }
  
-function pinBackspace() {
-  enteredPin = enteredPin.slice(0, -1);
-  renderPinDots();
-}
- 
-function pinClear() {
-  enteredPin = '';
-  renderPinDots();
-}
- 
-function renderPinDots() {
-  const display = document.getElementById('pinDisplay');
-  const dots = Array.from({ length: 6 }, (_, i) => `
-    <span class="pin-dot ${i < enteredPin.length ? 'filled' : ''}"></span>
-  `).join('');
-  display.innerHTML = dots;
-}
- 
-async function attemptPinLogin() {
+async function attemptPinLogin(pin) {
+  const input = document.getElementById('pinInput');
   const err = document.getElementById('pinError');
-  err.classList.add('hidden');
+  input.disabled = true;
  
   try {
     const { data, error } = await db
       .from('users')
       .select('*')
-      .eq('pin', enteredPin)
+      .eq('pin', pin)
       .single();
  
     if (error || !data) {
-      enteredPin = '';
-      renderPinDots();
+      input.value = '';
+      input.disabled = false;
       err.classList.remove('hidden');
-      // Shake animation
-      document.getElementById('pinDisplay').classList.add('shake');
-      setTimeout(() => document.getElementById('pinDisplay').classList.remove('shake'), 500);
+      input.classList.add('shake');
+      setTimeout(() => { input.classList.remove('shake'); input.focus(); }, 500);
       return;
     }
  
@@ -65,11 +44,12 @@ async function attemptPinLogin() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
     document.getElementById('mainApp').classList.add('active');
+    input.value = '';
+    input.disabled = false;
  
     if (data.role === 'admin') {
       document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
     }
-    // PM and APM roles can manage people and jobsites
     const pmTitles = ['Project Manager', 'Assistant Project Manager'];
     if (data.role === 'admin' && data.job_title && pmTitles.some(t => data.job_title.includes(t))) {
       document.querySelectorAll('.pm-only').forEach(el => el.classList.remove('hidden'));
@@ -83,9 +63,9 @@ async function attemptPinLogin() {
     updateStats();
  
   } catch (e) {
-    enteredPin = '';
-    renderPinDots();
-    document.getElementById('pinError').textContent = 'Connection error. Try again.';
+    input.value = '';
+    input.disabled = false;
+    err.textContent = 'Connection error. Try again.';
     err.classList.remove('hidden');
   }
 }
@@ -96,8 +76,8 @@ function doLogout() {
   allSites = [];
   allLog = [];
   scannedEquipmentId = null;
-  enteredPin = '';
-  renderPinDots();
+  const pinInput = document.getElementById('pinInput');
+  if (pinInput) { pinInput.value = ''; pinInput.disabled = false; }
   document.getElementById('pinError').classList.add('hidden');
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('active');
