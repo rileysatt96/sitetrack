@@ -104,7 +104,7 @@
           <select id="filterType" onchange="renderInventory()">
             <option value="">All types</option>
             <option>Ladder</option><option>Scaffold</option><option>Power Tool</option>
-            <option>Hand Tool</option><option>Safety</option><option>Generator</option><option>Other</option>
+            <option>Hand Tool</option><option>Safety</option><option>Generator</option><option>Welding Machine</option><option>Other</option>
           </select>
           <select id="filterSite" onchange="renderInventory()">
             <option value="">All sites</option>
@@ -174,6 +174,11 @@
                 <label>Jobsite</label>
                 <select id="scanSite"></select>
               </div>
+              <div class="field" id="photoField" class="hidden">
+                <label>Drop-off photo <span style="color:var(--accent)">*</span></label>
+                <input type="file" id="scanPhoto" accept="image/*" capture="environment" />
+                <span style="font-size:11px;color:var(--muted);margin-top:4px;">Required when checking out</span>
+              </div>
               <div class="field">
                 <label>Notes (optional)</label>
                 <input type="text" id="scanNotes" placeholder="Any condition notes..." />
@@ -234,7 +239,7 @@
                   <label>Type *</label>
                   <select id="newType">
                     <option>Ladder</option><option>Scaffold</option><option>Power Tool</option>
-                    <option>Hand Tool</option><option>Safety</option><option>Generator</option><option>Other</option>
+                    <option>Hand Tool</option><option>Safety</option><option>Generator</option><option>Welding Machine</option><option>Other</option>
                   </select>
                 </div>
               </div>
@@ -262,9 +267,9 @@
             </div>
           </section>
 
-          <section class="admin-section">
+          <section class="admin-section pm-only hidden">
             <div class="section-header">
-              <h2>Add supervisor</h2>
+              <h2>Add person</h2>
             </div>
             <div class="admin-form">
               <div class="form-row">
@@ -304,7 +309,7 @@
             </div>
           </section>
 
-          <section class="admin-section">
+          <section class="admin-section pm-only hidden">
             <div class="section-header">
               <h2>Add jobsite</h2>
             </div>
