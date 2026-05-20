@@ -11,10 +11,10 @@ let enteredPin = '';
 // ─── AUTH ───────────────────────────────────────────────────────────────────
 
 function pinPress(val) {
-  if (enteredPin.length >= 6) return;
+  
   enteredPin += val;
   renderPinDots();
-  if (enteredPin.length >= 4) {
+  if (enteredPin.length === 4) {
     // Try login after short delay to show last dot
     setTimeout(() => attemptPinLogin(), 300);
   }
