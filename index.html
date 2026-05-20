@@ -28,27 +28,18 @@
       </div>
       <div class="login-card">
         <p class="pin-label">Enter your PIN</p>
-        <div class="pin-display" id="pinDisplay">
-          <span class="pin-dot"></span>
-          <span class="pin-dot"></span>
-          <span class="pin-dot"></span>
-          <span class="pin-dot"></span>
-        </div>
+        <input
+          type="tel"
+          id="pinInput"
+          placeholder="Tap to enter PIN"
+          maxlength="4"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          autocomplete="off"
+          oninput="onPinInput(this.value)"
+          style="text-align:center;font-size:28px;letter-spacing:0.3em;padding:14px;font-family:var(--font-mono);"
+        />
         <div id="pinError" class="error-msg hidden">Incorrect PIN — try again</div>
-        <div class="numpad">
-          <button class="num-key" onclick="pinPress('1')">1</button>
-          <button class="num-key" onclick="pinPress('2')">2</button>
-          <button class="num-key" onclick="pinPress('3')">3</button>
-          <button class="num-key" onclick="pinPress('4')">4</button>
-          <button class="num-key" onclick="pinPress('5')">5</button>
-          <button class="num-key" onclick="pinPress('6')">6</button>
-          <button class="num-key" onclick="pinPress('7')">7</button>
-          <button class="num-key" onclick="pinPress('8')">8</button>
-          <button class="num-key" onclick="pinPress('9')">9</button>
-          <button class="num-key ghost" onclick="pinClear()">Clear</button>
-          <button class="num-key" onclick="pinPress('0')">0</button>
-          <button class="num-key ghost" onclick="pinBackspace()">&#9003;</button>
-        </div>
       </div>
     </div>
   </div>
