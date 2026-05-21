@@ -1,5 +1,5 @@
 // SiteTrack — Main App Logic
- 
+
 let currentUser = null;
 let allEquipment = [];
 let allSites = [];
@@ -7,7 +7,7 @@ let allLog = [];
 let scanner = null;
 let scannedEquipmentId = null;
 // ─── AUTH ───────────────────────────────────────────────────────────────────
- 
+
 function onPinInput(val) {
   const clean = val.replace(/[^0-9]/g, '').slice(0, 4);
   document.getElementById('pinInput').value = clean;
@@ -16,19 +16,19 @@ function onPinInput(val) {
     setTimeout(() => attemptPinLogin(clean), 200);
   }
 }
- 
+
 async function attemptPinLogin(pin) {
   const input = document.getElementById('pinInput');
   const err = document.getElementById('pinError');
   input.disabled = true;
- 
+
   try {
     const { data, error } = await db
       .from('users')
       .select('*')
       .eq('pin', pin)
       .single();
- 
+
     if (error || !data) {
       input.value = '';
       input.disabled = false;
@@ -37,7 +37,7 @@ async function attemptPinLogin(pin) {
       setTimeout(() => { input.classList.remove('shake'); input.focus(); }, 500);
       return;
     }
- 
+
     currentUser = data;
     document.getElementById('userChip').textContent = data.name;
     document.getElementById('loginScreen').classList.remove('active');
@@ -46,7 +46,7 @@ async function attemptPinLogin(pin) {
     document.getElementById('mainApp').classList.add('active');
     input.value = '';
     input.disabled = false;
- 
+
     if (data.role === 'admin') {
       document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
     }
@@ -54,14 +54,14 @@ async function attemptPinLogin(pin) {
     if (data.role === 'admin' && data.job_title && pmTitles.some(t => data.job_title.includes(t))) {
       document.querySelectorAll('.pm-only').forEach(el => el.classList.remove('hidden'));
     }
- 
+
     await Promise.all([loadSites(), loadEquipment(), loadLog()]);
     renderInventory();
     renderSites();
     renderLog();
     populateSiteDropdowns();
     updateStats();
- 
+
   } catch (e) {
     input.value = '';
     input.disabled = false;
@@ -69,7 +69,7 @@ async function attemptPinLogin(pin) {
     err.classList.remove('hidden');
   }
 }
- 
+
 function doLogout() {
   currentUser = null;
   allEquipment = [];
@@ -85,9 +85,9 @@ function doLogout() {
   document.getElementById('loginScreen').classList.add('active');
   switchTab('inventory', document.querySelector('.tab[data-tab="inventory"]'));
 }
- 
+
 // ─── DATA LOADING ────────────────────────────────────────────────────────────
- 
+
 async function loadEquipment() {
   const { data } = await db
     .from('equipment')
@@ -95,7 +95,7 @@ async function loadEquipment() {
     .order('item_code');
   allEquipment = data || [];
 }
- 
+
 async function loadSites() {
   const { data } = await db
     .from('jobsites')
@@ -103,7 +103,7 @@ async function loadSites() {
     .order('name');
   allSites = data || [];
 }
- 
+
 async function loadLog() {
   const { data } = await db
     .from('scan_log')
@@ -112,9 +112,9 @@ async function loadLog() {
     .limit(200);
   allLog = data || [];
 }
- 
+
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
- 
+
 function switchTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
@@ -126,16 +126,16 @@ function switchTab(name, el) {
   document.getElementById('tab-' + name).classList.add('active');
   if (name !== 'scan') stopScan();
 }
- 
+
 // ─── STATS ───────────────────────────────────────────────────────────────────
- 
+
 function updateStats() {
   const total = allEquipment.length;
   const avail = allEquipment.filter(i => i.status === 'Available').length;
   const out = allEquipment.filter(i => i.status === 'Out').length;
   const missing = allEquipment.filter(i => i.status === 'Missing').length;
   const overdue = allEquipment.filter(i => isOverdue(i)).length;
- 
+
   document.getElementById('statsRow').innerHTML = `
     <div class="stat"><div class="stat-val">${total}</div><div class="stat-lbl">Total</div></div>
     <div class="stat"><div class="stat-val green">${avail}</div><div class="stat-lbl">Available</div></div>
@@ -144,31 +144,31 @@ function updateStats() {
     <div class="stat ${overdue > 0 ? 'alert' : ''}"><div class="stat-val amber">${overdue}</div><div class="stat-lbl">Overdue</div></div>
   `;
 }
- 
+
 function isOverdue(item) {
   if (item.status !== 'Out' || !item.last_scanned_at) return false;
   const days = (Date.now() - new Date(item.last_scanned_at)) / 86400000;
   return days > CONFIG.overdueThresholdDays;
 }
- 
+
 // ─── INVENTORY ───────────────────────────────────────────────────────────────
- 
+
 function renderInventory() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const fType = document.getElementById('filterType').value;
   const fSite = document.getElementById('filterSite').value;
   const fStatus = document.getElementById('filterStatus').value;
- 
+
   const filtered = allEquipment.filter(i =>
     (!search || i.name.toLowerCase().includes(search) || i.item_code.toLowerCase().includes(search)) &&
     (!fType || i.type === fType) &&
     (!fSite || i.current_site_id === fSite) &&
     (!fStatus || i.status === fStatus)
   );
- 
+
   const tbody = document.getElementById('inventoryBody');
   const empty = document.getElementById('inventoryEmpty');
- 
+
   if (filtered.length === 0) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
@@ -190,10 +190,10 @@ function renderInventory() {
       </tr>
     `).join('');
   }
- 
+
   renderOverdueSection();
 }
- 
+
 function renderOverdueSection() {
   const overdue = allEquipment.filter(isOverdue);
   const sec = document.getElementById('overdueSection');
@@ -213,11 +213,11 @@ function renderOverdueSection() {
     </div>
   `;
 }
- 
+
 function daysSince(dateStr) {
   return Math.floor((Date.now() - new Date(dateStr)) / 86400000);
 }
- 
+
 async function quickAction(equipId, action) {
   const item = allEquipment.find(i => i.id === equipId);
   if (!item) return;
@@ -231,7 +231,7 @@ async function quickAction(equipId, action) {
     await db.from('scan_log').insert({ equipment_id: equipId, user_id: currentUser.id, action: 'mark_found' });
   }
 }
- 
+
 function showItemDetail(equipId) {
   const item = allEquipment.find(i => i.id === equipId);
   if (!item) return;
@@ -268,13 +268,30 @@ function showItemDetail(equipId) {
         <div class="log-action-badge ${l.action}">${actionLabel(l.action)}</div>
         <div class="log-body">
           <div class="log-meta">${l.user ? l.user.name : '—'} · ${l.site ? l.site.name : 'Yard'} · ${timeAgo(l.scanned_at)}</div>
+          ${l.photo_path ? `<div class="log-photo" data-path="${l.photo_path}">
+            <img src="" alt="Drop-off photo" style="display:none;max-width:160px;max-height:110px;border-radius:6px;margin-top:6px;cursor:pointer;border:1px solid var(--border);" onclick="viewPhoto(this)" />
+            <span class="photo-loading" style="font-size:11px;color:var(--muted)">📷 Loading photo...</span>
+          </div>` : ''}
         </div>
       </div>
     `).join('')}
   `;
   document.getElementById('modalOverlay').classList.remove('hidden');
+
+  // Load signed URLs for any photos in this modal
+  document.querySelectorAll('#modalBody .log-photo').forEach(async (div) => {
+    const path = div.dataset.path;
+    const { data } = await db.storage.from('checkout-photos').createSignedUrl(path, 3600);
+    if (data && data.signedUrl) {
+      const img = div.querySelector('img');
+      const loading = div.querySelector('.photo-loading');
+      img.src = data.signedUrl;
+      img.style.display = 'block';
+      if (loading) loading.remove();
+    }
+  });
 }
- 
+
 async function updateCondition(equipId, condition) {
   const { error } = await db.from('equipment')
     .update({ condition })
@@ -285,7 +302,7 @@ async function updateCondition(equipId, condition) {
   showToast(`Condition updated to "${condition}" ✓`);
   renderInventory();
 }
- 
+
 async function markMissing(equipId) {
   closeModal();
   await db.from('equipment').update({ status: 'Missing', current_site_id: null }).eq('id', equipId);
@@ -296,14 +313,14 @@ async function markMissing(equipId) {
   updateStats();
   showToast('Item marked as missing');
 }
- 
+
 // ─── SCAN ─────────────────────────────────────────────────────────────────────
- 
+
 function startScan() {
   if (scanner) { stopScan(); return; }
   const vf = document.getElementById('scanViewfinder');
   vf.innerHTML = `<div id="qr-reader" style="width:100%;height:100%"></div>`;
- 
+
   scanner = new Html5Qrcode('qr-reader');
   scanner.start(
     { facingMode: 'environment' },
@@ -317,10 +334,10 @@ function startScan() {
     showToast('Camera access denied — use manual entry');
     resetScanViewfinder();
   });
- 
+
   document.getElementById('scanBtn').textContent = 'Stop scanner';
 }
- 
+
 function stopScan() {
   if (scanner) {
     scanner.stop().catch(() => {});
@@ -328,7 +345,7 @@ function stopScan() {
   }
   resetScanViewfinder();
 }
- 
+
 function resetScanViewfinder() {
   const vf = document.getElementById('scanViewfinder');
   vf.innerHTML = `
@@ -347,20 +364,20 @@ function resetScanViewfinder() {
     Open Camera
   `;
 }
- 
+
 function manualLookup() {
   const code = document.getElementById('manualId').value.trim().toUpperCase();
   if (!code) return;
   lookupEquipment(code);
 }
- 
+
 function lookupEquipment(code) {
   const item = allEquipment.find(i => i.item_code.toUpperCase() === code.toUpperCase() || i.id === code);
   if (!item) { showToast(`Item "${code}" not found`); return; }
   scannedEquipmentId = item.id;
   showScanResult(item);
 }
- 
+
 function showScanResult(item) {
   document.getElementById('resultName').textContent = item.name;
   document.getElementById('resultMeta').textContent = `${item.item_code} · ${item.type}${item.current_site ? ' · ' + item.current_site.name : ''}`;
@@ -369,14 +386,14 @@ function showScanResult(item) {
   badge.className = `result-badge badge-${item.status.toLowerCase()}`;
   document.getElementById('scanResult').classList.remove('hidden');
   document.getElementById('scanResult').scrollIntoView({ behavior: 'smooth' });
- 
+
   const siteSelect = document.getElementById('scanSite');
   siteSelect.innerHTML = allSites.filter(s => s.status === 'active').map(s =>
     `<option value="${s.id}" ${item.current_site_id === s.id ? 'selected' : ''}>${s.name}</option>`
   ).join('');
- 
+
   document.getElementById('btnCheckIn').disabled = item.status === 'Available';
- 
+
   // Photo field — show only when checking out
   const photoField = document.getElementById('photoField');
   if (item.status === 'Available' || item.status === 'Missing') {
@@ -385,7 +402,7 @@ function showScanResult(item) {
     photoField.style.display = 'none';
     document.getElementById('scanPhoto').value = '';
   }
- 
+
   // Condition field — show only when checking in (returning)
   const conditionField = document.getElementById('conditionField');
   if (item.status === 'Out') {
@@ -396,7 +413,7 @@ function showScanResult(item) {
     conditionField.style.display = 'none';
   }
 }
- 
+
 async function doCheckIn() {
   if (!scannedEquipmentId) return;
   const notes = document.getElementById('scanNotes').value;
@@ -404,7 +421,7 @@ async function doCheckIn() {
   await performCheckin(scannedEquipmentId, notes, condition);
   resetScan();
 }
- 
+
 async function doCheckOut() {
   if (!scannedEquipmentId) return;
   const photoInput = document.getElementById('scanPhoto');
@@ -413,11 +430,11 @@ async function doCheckOut() {
     photoInput.focus();
     return;
   }
- 
+
   const btn = document.getElementById('btnCheckOut');
   btn.textContent = 'Uploading photo...';
   btn.disabled = true;
- 
+
   try {
     // Upload photo to Supabase Storage
     const file = photoInput.files[0];
@@ -426,30 +443,30 @@ async function doCheckOut() {
     const item = allEquipment.find(i => i.id === scannedEquipmentId);
     const fileName = `${item.item_code}_${timestamp}.${ext}`;
     const filePath = `${new Date().toISOString().slice(0,10)}/${fileName}`;
- 
+
     const { error: uploadError } = await db.storage
       .from('checkout-photos')
       .upload(filePath, file, { contentType: file.type, upsert: false });
- 
+
     if (uploadError) {
       showToast('Photo upload failed: ' + uploadError.message);
       btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> Send to site';
       btn.disabled = false;
       return;
     }
- 
+
     const siteId = document.getElementById('scanSite').value;
     const notes = document.getElementById('scanNotes').value;
     await performCheckout(scannedEquipmentId, siteId, notes, filePath);
     resetScan();
- 
+
   } catch(e) {
     showToast('Error: ' + e.message);
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> Send to site';
     btn.disabled = false;
   }
 }
- 
+
 async function performCheckin(equipId, notes, condition = null) {
   const update = {
     status: 'Available',
@@ -472,7 +489,7 @@ async function performCheckin(equipId, notes, condition = null) {
   updateStats();
   showToast('Checked in ✓');
 }
- 
+
 async function performCheckout(equipId, siteId, notes, photoPath = null) {
   await db.from('equipment').update({
     status: 'Out',
@@ -495,7 +512,7 @@ async function performCheckout(equipId, siteId, notes, photoPath = null) {
   updateStats();
   showToast(`Sent to ${site ? site.name : 'site'} ✓`);
 }
- 
+
 function resetScan() {
   scannedEquipmentId = null;
   document.getElementById('scanResult').classList.add('hidden');
@@ -506,11 +523,11 @@ function resetScan() {
   document.getElementById('conditionField').style.display = 'none';
   resetScanViewfinder();
 }
- 
+
 // ─── SITES ───────────────────────────────────────────────────────────────────
- 
+
 const SITE_COLORS = ['#1D9E75','#D85A30','#378ADD','#D4537E','#639922','#BA7517','#7F77DD','#E24B4A'];
- 
+
 function renderSites() {
   const grid = document.getElementById('sitesGrid');
   const active = allSites.filter(s => s.status === 'active');
@@ -534,30 +551,30 @@ function renderSites() {
     `;
   }).join('');
 }
- 
+
 function filterBySite(siteId) {
   switchTab('inventory', document.querySelector('.tab[data-tab="inventory"]'));
   document.getElementById('filterSite').value = siteId;
   renderInventory();
 }
- 
+
 // ─── LOG ─────────────────────────────────────────────────────────────────────
- 
+
 function renderLog() {
   const fSite = document.getElementById('logFilterSite').value;
   const fAction = document.getElementById('logFilterAction').value;
- 
+
   const filtered = allLog.filter(l =>
     (!fSite || l.site_id === fSite) &&
     (!fAction || l.action === fAction)
   );
- 
+
   const list = document.getElementById('logList');
   if (filtered.length === 0) {
     list.innerHTML = '<p class="empty-log">No activity yet</p>';
     return;
   }
- 
+
   list.innerHTML = filtered.map(l => {
     let photoHtml = '';
     if (l.photo_path) {
@@ -579,7 +596,7 @@ function renderLog() {
       </div>
     </div>`;
   }).join('');
- 
+
   // Load signed URLs for photos
   document.querySelectorAll('.log-photo').forEach(async (div) => {
     const path = div.dataset.path;
@@ -593,11 +610,11 @@ function renderLog() {
     }
   });
 }
- 
+
 function actionLabel(action) {
   return { check_out: 'Checked out', check_in: 'Returned', audit: 'Audited', mark_missing: 'Missing', mark_found: 'Found' }[action] || action;
 }
- 
+
 function timeAgo(dateStr) {
   const mins = Math.floor((Date.now() - new Date(dateStr)) / 60000);
   if (mins < 1) return 'just now';
@@ -606,9 +623,9 @@ function timeAgo(dateStr) {
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
- 
+
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
- 
+
 async function addEquipment() {
   const code = document.getElementById('newCode').value.trim().toUpperCase();
   const name = document.getElementById('newName').value.trim();
@@ -616,12 +633,12 @@ async function addEquipment() {
   const serial = document.getElementById('newSerial').value.trim();
   const condition = document.getElementById('newCondition').value;
   const notes = document.getElementById('newNotes').value.trim();
- 
+
   if (!code || !name) { showToast('Item code and name are required'); return; }
- 
+
   const { error } = await db.from('equipment').insert({ item_code: code, name, type, serial_number: serial || null, condition, notes: notes || null });
   if (error) { showToast('Error: ' + (error.message.includes('unique') ? 'Item code already exists' : error.message)); return; }
- 
+
   document.getElementById('newCode').value = '';
   document.getElementById('newName').value = '';
   document.getElementById('newSerial').value = '';
@@ -631,7 +648,7 @@ async function addEquipment() {
   updateStats();
   showToast(`${name} added to inventory ✓`);
 }
- 
+
 async function addUser() {
   const name = document.getElementById('newUserName').value.trim();
   const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
@@ -639,10 +656,10 @@ async function addUser() {
   const pin = document.getElementById('newUserPin').value.trim();
   const role = document.getElementById('newUserRole').value;
   const title = document.getElementById('newUserTitle').value.trim();
- 
+
   if (!name || !pin) { showToast('Name and PIN are required'); return; }
   if (pin.length < 4) { showToast('PIN must be at least 4 digits'); return; }
- 
+
   const { error } = await db.from('users').insert({
     name, pin, role,
     email: email || null,
@@ -650,7 +667,7 @@ async function addUser() {
     job_title: title || null
   });
   if (error) { showToast('Error: ' + (error.message.includes('unique') ? 'PIN or email already exists' : error.message)); return; }
- 
+
   document.getElementById('newUserName').value = '';
   document.getElementById('newUserEmail').value = '';
   document.getElementById('newUserPhone').value = '';
@@ -658,7 +675,7 @@ async function addUser() {
   document.getElementById('newUserTitle').value = '';
   showToast(`${name} added ✓`);
 }
- 
+
 async function addSite() {
   const name = document.getElementById('newSiteName').value.trim();
   const address = document.getElementById('newSiteAddr').value.trim();
@@ -672,7 +689,7 @@ async function addSite() {
   renderSites();
   showToast(`${name} added ✓`);
 }
- 
+
 async function printQRLabels() {
   const items = allEquipment.map(i => ({ code: i.item_code, name: i.name }));
   const win = window.open('', '_blank');
@@ -711,9 +728,9 @@ async function printQRLabels() {
   </body></html>`);
   win.document.close();
 }
- 
+
 // ─── UTILITIES ───────────────────────────────────────────────────────────────
- 
+
 function populateSiteDropdowns() {
   const activeSites = allSites.filter(s => s.status === 'active');
   const opts = activeSites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -724,15 +741,15 @@ function populateSiteDropdowns() {
     document.getElementById('scanSite').innerHTML = opts;
   }
 }
- 
+
 function closeModal() {
   document.getElementById('modalOverlay').classList.add('hidden');
 }
- 
+
 document.getElementById('modalOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
- 
+
 function viewPhoto(img) {
   document.getElementById('modalTitle').textContent = 'Drop-off Photo';
   document.getElementById('modalBody').innerHTML = `
@@ -740,7 +757,7 @@ function viewPhoto(img) {
   `;
   document.getElementById('modalOverlay').classList.remove('hidden');
 }
- 
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
