@@ -1,3 +1,4 @@
+
 /* SiteTrack — Industrial Utilitarian Design */
 /* Font: Barlow Condensed for headings, Barlow for UI, DM Mono for codes */
  
@@ -489,3 +490,11 @@ input[type=file]::-webkit-file-upload-button {
   padding: 5px 12px; font-family: var(--font);
   font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 10px;
 }
+ 
+/* ─── CONDITION EDITOR ───────────────────────────────────────────────────── */
+.detail-condition {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px 0; border-top: 1px solid var(--border);
+}
+.condition-row { display: flex; gap: 8px; align-items: center; }
+.condition-row select { flex: 1; }
