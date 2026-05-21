@@ -247,6 +247,17 @@ function showItemDetail(equipId) {
       ${item.serial_number ? `<div class="detail-row"><span>Serial</span><span class="mono">${item.serial_number}</span></div>` : ''}
       ${item.notes ? `<div class="detail-row"><span>Notes</span><span>${item.notes}</span></div>` : ''}
     </div>
+    <div class="detail-condition">
+      <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)">Update condition</label>
+      <div class="condition-row">
+        <select id="detailCondition" onchange="updateCondition('${item.id}', this.value)">
+          <option value="Good" ${item.condition === 'Good' ? 'selected' : ''}>Good</option>
+          <option value="Fair" ${item.condition === 'Fair' ? 'selected' : ''}>Fair</option>
+          <option value="Poor" ${item.condition === 'Poor' ? 'selected' : ''}>Poor</option>
+          <option value="Out of Service" ${item.condition === 'Out of Service' ? 'selected' : ''}>Out of Service</option>
+        </select>
+      </div>
+    </div>
     <div class="detail-actions">
       ${item.status === 'Out' ? `<button class="btn-primary" onclick="closeModal();scannedEquipmentId='${item.id}';switchTab('scan',document.querySelector('.tab[data-tab=scan]'))">Scan to return</button>` : ''}
       ${item.status !== 'Missing' ? `<button class="btn-ghost red" onclick="markMissing('${item.id}')">Mark as missing</button>` : ''}
@@ -262,6 +273,17 @@ function showItemDetail(equipId) {
     `).join('')}
   `;
   document.getElementById('modalOverlay').classList.remove('hidden');
+}
+ 
+async function updateCondition(equipId, condition) {
+  const { error } = await db.from('equipment')
+    .update({ condition })
+    .eq('id', equipId);
+  if (error) { showToast('Error updating condition'); return; }
+  const item = allEquipment.find(i => i.id === equipId);
+  if (item) item.condition = condition;
+  showToast(`Condition updated to "${condition}" ✓`);
+  renderInventory();
 }
  
 async function markMissing(equipId) {
@@ -354,7 +376,8 @@ function showScanResult(item) {
   ).join('');
  
   document.getElementById('btnCheckIn').disabled = item.status === 'Available';
-  // Show photo field only when item can be checked out
+ 
+  // Photo field — show only when checking out
   const photoField = document.getElementById('photoField');
   if (item.status === 'Available' || item.status === 'Missing') {
     photoField.style.display = 'flex';
@@ -362,12 +385,23 @@ function showScanResult(item) {
     photoField.style.display = 'none';
     document.getElementById('scanPhoto').value = '';
   }
+ 
+  // Condition field — show only when checking in (returning)
+  const conditionField = document.getElementById('conditionField');
+  if (item.status === 'Out') {
+    conditionField.style.display = 'flex';
+    // Default to current condition
+    document.getElementById('scanCondition').value = item.condition || 'Good';
+  } else {
+    conditionField.style.display = 'none';
+  }
 }
  
 async function doCheckIn() {
   if (!scannedEquipmentId) return;
   const notes = document.getElementById('scanNotes').value;
-  await performCheckin(scannedEquipmentId, notes);
+  const condition = document.getElementById('scanCondition').value;
+  await performCheckin(scannedEquipmentId, notes, condition);
   resetScan();
 }
  
@@ -416,13 +450,15 @@ async function doCheckOut() {
   }
 }
  
-async function performCheckin(equipId, notes) {
-  await db.from('equipment').update({
+async function performCheckin(equipId, notes, condition = null) {
+  const update = {
     status: 'Available',
     current_site_id: null,
     last_scanned_by: currentUser.id,
     last_scanned_at: new Date().toISOString()
-  }).eq('id', equipId);
+  };
+  if (condition) update.condition = condition;
+  await db.from('equipment').update(update).eq('id', equipId);
   await db.from('scan_log').insert({
     equipment_id: equipId,
     user_id: currentUser.id,
@@ -467,6 +503,7 @@ function resetScan() {
   document.getElementById('scanNotes').value = '';
   document.getElementById('scanPhoto').value = '';
   document.getElementById('photoField').style.display = 'none';
+  document.getElementById('conditionField').style.display = 'none';
   resetScanViewfinder();
 }
  
